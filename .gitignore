@@ -1,6 +1,6 @@
-# Binarios
-bifrost
-bifrost.exe
+# Binarios (solo en la raíz del repo; no confundir con cmd/bifrost/)
+/bifrost
+/bifrost.exe
 
 # Logs y temporales
 *.log
