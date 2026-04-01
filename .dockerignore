@@ -1,0 +1,18 @@
+# Ignorar binarios locales
+bin/
+bifrost
+bifrost.exe
+
+# Ignorar archivos de configuración local
+config/client.conf
+config/server.conf
+
+# Ignorar git y archivos del editor
+.git/
+.gitignore
+.vscode/
+.idea/
+*.md
+!VERSION.md
+!README.md
+build.sh

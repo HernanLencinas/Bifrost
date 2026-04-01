@@ -1,0 +1,14 @@
+# Binarios
+bifrost
+bifrost.exe
+bin/
+
+# Logs y temporales
+*.log
+/tmp/
+.DS_Store
+
+# Configuracion
+
+config/client.conf
+config/server.conf
