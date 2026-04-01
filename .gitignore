@@ -1,7 +1,6 @@
 # Binarios
 bifrost
 bifrost.exe
-bin/
 
 # Logs y temporales
 *.log
