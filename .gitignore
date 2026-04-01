@@ -7,8 +7,3 @@ bin/
 *.log
 /tmp/
 .DS_Store
-
-# Configuracion
-
-config/client.conf
-config/server.conf
