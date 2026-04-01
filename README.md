@@ -4,7 +4,7 @@
 
 Bifrost es una herramienta robusta y de alto rendimiento escrita en Go diseñada para crear túneles TCP sobre una única conexión segura de WebSockets (multiplexada). Es ideal para realizar *Port Forwarding* y eludir restricciones de red mediante tráfico HTTP/S, facilitando el acceso a servicios internos de forma segura.
 
-## ✨ Características Principales
+## Características Principales
 
 - **Stream Multiplexing:** Utiliza `hashicorp/yamux` sobre WebSockets para manejar cientos de conexiones concurrentes en una sola sesión real.
 - **TUI Interactiva Premium:** Interfaz de usuario por consola con soporte para múltiples servidores, túneles, logs en vivo y atajos rápidos.
@@ -15,7 +15,7 @@ Bifrost es una herramienta robusta y de alto rendimiento escrita en Go diseñada
 
 ---
 
-## 🚀 Compilación y Distribución
+## Compilación y Distribución
 
 Bifrost incluye un script de automatización que compila, organiza y empaqueta la aplicación para todas las plataformas soportadas.
 
@@ -34,7 +34,7 @@ Esto generará una carpeta `bin/` con:
 
 ---
 
-## 🛠️ Configuración y Uso
+## Configuración y Uso
 
 ### 1. Generar un Token de Autenticación
 Para mayor seguridad, nunca guardes tus tokens en texto plano. Encripta tu clave secreta:
@@ -96,7 +96,7 @@ Ejecuta `./bifrost` sin argumentos para abrir la consola interactiva.
 
 ---
 
-## 🐳 Docker Support
+## Docker Support
 
 Si prefieres usar contenedores, Bifrost incluye un `Dockerfile` multi-stage optimizado:
 
