@@ -32,13 +32,14 @@ func newServerCmd() *cobra.Command {
  
 `, getAppVersion())
 
-			// Leemos el archivo de configuración con Viper
-			viper.SetConfigFile("config/server.conf")
+			// Leemos el archivo de configuración con Viper (ruta junto al ejecutable real, no al cwd)
+			cfgPath := serverConfigPath()
+			viper.SetConfigFile(cfgPath)
 			viper.SetConfigType("json")
 
 			// Si el archivo existe, lo lee
 			if err := viper.ReadInConfig(); err != nil {
-				slog.Error("Fallo intentando iniciar el servidor: No se encontró o no se pudo leer el archivo 'config/server.conf'.", "error", err)
+				slog.Error("Fallo intentando iniciar el servidor: No se encontró o no se pudo leer el archivo de configuración del servidor.", "file", cfgPath, "error", err)
 				os.Exit(1)
 			}
 			slog.Info("Cargando configuración desde archivo", "file", viper.ConfigFileUsed())

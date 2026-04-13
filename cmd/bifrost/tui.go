@@ -7,9 +7,11 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -129,8 +131,8 @@ func (l *tviewLogger) Write(p []byte) (n int, err error) {
 
 func loadConfig() clientConfigFile {
 	var file clientConfigFile
-	// Intenta leer el archivo
-	data, err := os.ReadFile("config/client.conf")
+	// Intenta leer el archivo (junto al ejecutable real, no al cwd)
+	data, err := os.ReadFile(clientConfigPath())
 	if err == nil && len(data) > 3 {
 		if marshalErr := json.Unmarshal(data, &file); marshalErr == nil {
 			return file
@@ -158,11 +160,12 @@ func saveConfig(file *clientConfigFile) {
 		slog.Error("No se pudo estructurar el JSON para guardar", "error", err)
 		return
 	}
-	_ = os.MkdirAll("config", 0755)
-	if err := os.WriteFile("config/client.conf", data, 0644); err != nil {
+	path := clientConfigPath()
+	_ = os.MkdirAll(configDirPath(), 0755)
+	if err := os.WriteFile(path, data, 0644); err != nil {
 		slog.Error("No se pudo guardar la configuración", "error", err)
 	} else {
-		slog.Info("Configuración guardada en config/client.conf exitosamente")
+		slog.Info("Configuración guardada correctamente", "file", path)
 	}
 }
 
@@ -176,6 +179,14 @@ func StartInteractiveUI() error {
 
 	app := tview.NewApplication()
 	app.EnableMouse(true)
+
+	// Cerrar la TUI con gracia al cerrar la ventana/pestaña del terminal o con Ctrl+C.
+	go func() {
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+		<-ch
+		app.Stop()
+	}()
 
 	// Título principal arriba
 	titleBar := tview.NewTextView().
@@ -1078,6 +1089,9 @@ para volver a la lista.[-]`, serverName))
 	if err := app.SetRoot(pages, true).EnableMouse(true).Run(); err != nil {
 		return err
 	}
+
+	// En algunas terminales de macOS el cursor puede quedar oculto tras salir de la pantalla alternativa.
+	fmt.Fprint(os.Stderr, "\033[?25h")
 
 	return nil
 }

@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-
 	"github.com/spf13/cobra"
 	"strings"
 )
 
 func getAppVersion() string {
-	data, err := os.ReadFile("VERSION.md")
+	data, err := os.ReadFile(versionFilePath())
 	if err != nil {
 		return "1.0.0" // Default fallback
 	}
