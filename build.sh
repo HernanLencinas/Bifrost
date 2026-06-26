@@ -3,8 +3,9 @@
 # Bifrost Multi-Platform Build Script
 # ----------------------------------
 
-# Obtener versión desde VERSION.md
-VERSION=$(cat VERSION.md)
+# Obtener versión desde VERSION.md (solo en tiempo de compilación)
+VERSION=$(tr -d '[:space:]' < VERSION.md)
+LDFLAGS="-X main.Version=${VERSION}"
 BINARY_NAME="bifrost"
 OUTPUT_DIR="bin"
 
@@ -40,8 +41,8 @@ for PLATFORM in "${PLATFORMS[@]}"; do
 
     echo "📦 Compilando para $OS ($ARCH)..."
     
-    # Ejecutar compilación de Go
-    GOOS=$OS GOARCH=$ARCH go build -o "$OUTPUT_PATH" cmd/bifrost/*.go
+    # Ejecutar compilación de Go (versión embebida en el binario)
+    GOOS=$OS GOARCH=$ARCH go build -ldflags "${LDFLAGS}" -o "$OUTPUT_PATH" ./cmd/bifrost
 
     if [ $? -eq 0 ]; then
         echo "✅ Generado: $OUTPUT_PATH"
@@ -52,10 +53,6 @@ for PLATFORM in "${PLATFORMS[@]}"; do
             cp "config/client.conf" "${PLATFORM_DIR}/config/client.conf"
             echo "📄 Configuración copiada a ${PLATFORM_DIR}/config/"
         fi
-
-        # Copiar VERSION.md
-        cp VERSION.md "${PLATFORM_DIR}/VERSION.md"
-        echo "📄 VERSION.md copiado a ${PLATFORM_DIR}/"
 
         # Comprimir la distribución en formato ZIP
         ZIP_NAME="bifrost_${VERSION}_${OS}_${ARCH}.zip"

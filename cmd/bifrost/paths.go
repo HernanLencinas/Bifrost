@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// appRootDir es el directorio base para config/ y VERSION.md: el del ejecutable
+// appRootDir es el directorio base para config/: el del ejecutable
 // (resolviendo symlinks), salvo en builds temporales de `go run` donde se usa cwd.
 func appRootDir() string {
 	dir, err := executableBaseDir()
@@ -56,10 +56,6 @@ func clientConfigPath() string {
 
 func serverConfigPath() string {
 	return filepath.Join(appRootDir(), "config", "server.conf")
-}
-
-func versionFilePath() string {
-	return filepath.Join(appRootDir(), "VERSION.md")
 }
 
 func configDirPath() string {
