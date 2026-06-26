@@ -41,6 +41,83 @@ func formatBytes(n int64) string {
 	}
 }
 
+var (
+	uiModalBg      = tcell.GetColor("#1a2332")
+	uiModalBorder  = tcell.GetColor("#ff8c00")
+	uiModalAccent  = tcell.GetColor("#ffb347")
+	uiOverlayBg    = tcell.GetColor("#0a0a0a")
+	uiFormBg       = tcell.GetColor("#1e2430")
+	uiFormFieldBg  = tcell.GetColor("#2a3444")
+	uiFormButtonBg = tcell.GetColor("#2a3444")
+)
+
+func uiButtonStyles() (tcell.Style, tcell.Style) {
+	normal := tcell.StyleDefault.
+		Background(uiFormButtonBg).
+		Foreground(tcell.ColorWhite)
+	activated := tcell.StyleDefault.
+		Background(uiModalBorder).
+		Foreground(tcell.ColorBlack).
+		Attributes(tcell.AttrBold)
+	return normal, activated
+}
+
+func styleForm(form *tview.Form) {
+	normalBtn, activatedBtn := uiButtonStyles()
+	form.SetBackgroundColor(uiFormBg)
+	form.SetFieldBackgroundColor(uiFormFieldBg)
+	form.SetFieldTextColor(tcell.ColorWhite)
+	form.SetLabelColor(uiModalAccent)
+	form.SetButtonTextColor(tcell.ColorWhite)
+	form.SetButtonBackgroundColor(uiFormButtonBg)
+	form.SetButtonStyle(normalBtn)
+	form.SetButtonActivatedStyle(activatedBtn)
+	form.SetBorderColor(uiModalBorder)
+	form.SetTitleColor(uiModalAccent)
+	form.SetBorderPadding(1, 1, 2, 2)
+}
+
+func newStyledModal(text string, buttons []string) *tview.Modal {
+	normalBtn, activatedBtn := uiButtonStyles()
+	modal := tview.NewModal()
+	modal.SetText(text)
+	modal.AddButtons(buttons)
+	modal.SetBackgroundColor(uiModalBg)
+	modal.SetTextColor(tcell.ColorWhite)
+	modal.SetBorderColor(uiModalBorder)
+	modal.SetButtonTextColor(tcell.ColorWhite)
+	modal.SetButtonBackgroundColor(uiFormButtonBg)
+	modal.SetButtonStyle(normalBtn)
+	modal.SetButtonActivatedStyle(activatedBtn)
+	return modal
+}
+
+func centeredOverlayPage(content tview.Primitive, width, height int) *tview.Grid {
+	grid := tview.NewGrid().SetBorders(false)
+	grid.SetRows(0, height, 0).SetColumns(0, width, 0)
+	grid.AddItem(tview.NewBox().SetBackgroundColor(uiOverlayBg), 0, 0, 3, 3, 0, 0, false)
+	grid.AddItem(content, 1, 1, 1, 1, 0, 0, true)
+	return grid
+}
+
+func newConfirmModal(title, message string, buttons []string, done func(int, string)) *tview.Grid {
+	text := fmt.Sprintf("[#ffb347::b]%s[-]\n\n[white]%s[-]", title, message)
+	modal := newStyledModal(text, buttons).SetDoneFunc(done)
+	return centeredOverlayPage(modal, 72, 11)
+}
+
+func newFormPage(form *tview.Form, title string, formHeight int) *tview.Grid {
+	styleForm(form)
+	form.SetBorder(true).SetTitle(" "+title+" ").SetTitleAlign(tview.AlignCenter)
+
+	accentBar := tview.NewBox().SetBackgroundColor(uiModalBorder)
+	card := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(form, 0, 1, true).
+		AddItem(accentBar, 1, 0, false)
+
+	return centeredOverlayPage(card, 72, formHeight+1)
+}
+
 type tunnelDetail struct {
 	tx         atomic.Int64
 	rx         atomic.Int64
@@ -683,10 +760,11 @@ para volver a la lista.[-]`, serverName))
 				// Acción al apretar Enter sobre un ítem.
 				// Si ya está activo, lo cancelamos.
 				if cancel, exists := activeTunnels[tunnelID]; exists {
-					modal := tview.NewModal().
-						SetText(fmt.Sprintf("¿Desea desconectar el túnel [%s]?", c.Name)).
-						AddButtons([]string{"Si", "No"}).
-						SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					pages.AddPage("modal", newConfirmModal(
+						"Desconectar túnel",
+						fmt.Sprintf("¿Desea desconectar el túnel [%s]?", c.Name),
+						[]string{"Si", "No"},
+						func(buttonIndex int, buttonLabel string) {
 							if buttonLabel == "Si" {
 								// No llamar cancel() en el hilo UI: los callbacks del túnel
 								// usan QueueUpdateDraw, que bloquea hasta que el bucle principal
@@ -705,8 +783,7 @@ para volver a la lista.[-]`, serverName))
 							}
 							pages.RemovePage("modal")
 							app.SetFocus(list)
-						})
-					pages.AddPage("modal", modal, true, true)
+						}), true, true)
 					return
 				}
 
@@ -770,16 +847,12 @@ para volver a la lista.[-]`, serverName))
 				updateFooter()
 			})
 
-		title := " Nueva Conexión "
+		title := "Nueva Conexión"
 		if isEdit {
-			title = " Editar Conexión "
+			title = "Editar Conexión"
 		}
-		form.SetBorder(true).SetTitle(title).SetTitleAlign(tview.AlignCenter)
 
-		formFlex := tview.NewFlex().AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).AddItem(nil, 0, 1, false).AddItem(form, 16, 1, true).AddItem(nil, 0, 1, false), 110, 1, true).
-			AddItem(nil, 0, 1, false)
-		pages.AddPage("form", formFlex, true, true)
+		pages.AddPage("form", newFormPage(form, title, 16), true, true)
 	}
 
 	showTunnelForm := func(editIdx int) {
@@ -836,16 +909,12 @@ para volver a la lista.[-]`, serverName))
 				updateFooter()
 			})
 
-		title := " Nuevo Túnel "
+		title := "Nuevo Túnel"
 		if isEdit {
-			title = " Editar Túnel "
+			title = "Editar Túnel"
 		}
-		form.SetBorder(true).SetTitle(title).SetTitleAlign(tview.AlignCenter)
 
-		formFlex := tview.NewFlex().AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).AddItem(nil, 0, 1, false).AddItem(form, 14, 1, true).AddItem(nil, 0, 1, false), 110, 1, true).
-			AddItem(nil, 0, 1, false)
-		pages.AddPage("form", formFlex, true, true)
+		pages.AddPage("form", newFormPage(form, title, 14), true, true)
 	}
 
 	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow).
@@ -921,10 +990,11 @@ para volver a la lista.[-]`, serverName))
 			if event.Rune() == 'd' || event.Rune() == 'D' {
 				row, _ := activeTable.GetSelection()
 				if tID, ok := rowToTID[row]; ok {
-					modal := tview.NewModal().
-						SetText(fmt.Sprintf("¿Desea detener el túnel [%s]?", tID)).
-						AddButtons([]string{"Si", "No"}).
-						SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					pages.AddPage("modal", newConfirmModal(
+						"Detener túnel",
+						fmt.Sprintf("¿Desea detener el túnel [%s]?", tID),
+						[]string{"Si", "No"},
+						func(buttonIndex int, buttonLabel string) {
 							if buttonLabel == "Si" {
 								if cancel, ok := activeTunnels[tID]; ok {
 									go func(cancel context.CancelFunc, id string) {
@@ -944,18 +1014,18 @@ para volver a la lista.[-]`, serverName))
 							pages.RemovePage("modal")
 							app.SetFocus(activeTable)
 							updateFooter()
-						})
-					pages.AddPage("modal", modal, true, true)
+						}), true, true)
 					return nil
 				}
 			} else if event.Rune() == 'k' || event.Rune() == 'K' {
 				if len(activeTunnels) == 0 {
 					return nil
 				}
-				modal := tview.NewModal().
-					SetText(fmt.Sprintf("¿Desea detener TODAS las conexiones activas (%d)?", len(activeTunnels))).
-					AddButtons([]string{"Si", "No"}).
-					SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+				pages.AddPage("modal", newConfirmModal(
+					"Detener todos",
+					fmt.Sprintf("¿Desea detener TODAS las conexiones activas (%d)?", len(activeTunnels)),
+					[]string{"Si", "No"},
+					func(buttonIndex int, buttonLabel string) {
 						if buttonLabel == "Si" {
 							snapshot := make(map[string]context.CancelFunc, len(activeTunnels))
 							for id, cancel := range activeTunnels {
@@ -981,8 +1051,7 @@ para volver a la lista.[-]`, serverName))
 						pages.RemovePage("modal")
 						app.SetFocus(activeTable)
 						updateFooter()
-					})
-				pages.AddPage("modal", modal, true, true)
+					}), true, true)
 				return nil
 			}
 		}
@@ -1022,10 +1091,11 @@ para volver a la lista.[-]`, serverName))
 					return nil
 				} else if validItem && event.Rune() == 'd' {
 					serverName := file.Servers[idx].Name
-					modal := tview.NewModal().
-						SetText(fmt.Sprintf("¿Está seguro que desea eliminar la conexión [%s]?\nEsto detendrá todos sus túneles activos.", serverName)).
-						AddButtons([]string{"Si", "No"}).
-						SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					pages.AddPage("modal", newConfirmModal(
+						"Eliminar conexión",
+						fmt.Sprintf("¿Está seguro que desea eliminar la conexión [%s]?\nEsto detendrá todos sus túneles activos.", serverName),
+						[]string{"Si", "No"},
+						func(buttonIndex int, buttonLabel string) {
 							if buttonLabel == "Si" {
 								srvIdx := idx
 								go func() {
@@ -1056,8 +1126,7 @@ para volver a la lista.[-]`, serverName))
 							pages.RemovePage("modal")
 							app.SetFocus(list)
 							updateFooter()
-						})
-					pages.AddPage("modal", modal, true, true)
+						}), true, true)
 					return nil
 				}
 			} else if currentScope == "tunnel" {
@@ -1074,10 +1143,11 @@ para volver a la lista.[-]`, serverName))
 					return nil
 				} else if validItem && event.Rune() == 'd' {
 					tunnelName := file.Servers[selectedServer].Connections[idx].Name
-					modal := tview.NewModal().
-						SetText(fmt.Sprintf("¿Está seguro que desea eliminar el túnel [%s]?", tunnelName)).
-						AddButtons([]string{"Si", "No"}).
-						SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+					pages.AddPage("modal", newConfirmModal(
+						"Eliminar túnel",
+						fmt.Sprintf("¿Está seguro que desea eliminar el túnel [%s]?", tunnelName),
+						[]string{"Si", "No"},
+						func(buttonIndex int, buttonLabel string) {
 							if buttonLabel == "Si" {
 								tID := fmt.Sprintf("%d-%d", selectedServer, idx)
 								connIdx := idx
@@ -1106,8 +1176,7 @@ para volver a la lista.[-]`, serverName))
 							pages.RemovePage("modal")
 							app.SetFocus(list)
 							updateFooter()
-						})
-					pages.AddPage("modal", modal, true, true)
+						}), true, true)
 					return nil
 				} else if event.Rune() == 't' || event.Rune() == 'T' {
 					// Conectar todos los túneles
@@ -1124,18 +1193,18 @@ para volver a la lista.[-]`, serverName))
 		}
 
 		if event.Key() == tcell.KeyCtrlQ {
-			quitModal := tview.NewModal().
-				SetText("¿Está seguro que desea salir de Bifrost?").
-				AddButtons([]string{"Si", "No"}).
-				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			pages.AddPage("modal", newConfirmModal(
+				"Salir",
+				"¿Está seguro que desea salir de Bifrost?",
+				[]string{"Si", "No"},
+				func(buttonIndex int, buttonLabel string) {
 					if buttonLabel == "Si" {
 						app.Stop()
 					}
 					pages.RemovePage("modal")
 					app.SetFocus(list)
 					updateFooter()
-				})
-			pages.AddPage("modal", quitModal, true, true)
+				}), true, true)
 			return nil
 		}
 		return event
