@@ -717,7 +717,7 @@ para volver a la lista.[-]`, serverName))
 			return
 		}
 		focusBeforeHelp = app.GetFocus()
-		helpPage, topicList, contentView := newHelpPage(version)
+		helpPage, topicList, contentView := newHelpPage(app, version)
 		helpTopicList = topicList
 		helpContentView = contentView
 		pages.AddPage("help", helpPage, true, true)

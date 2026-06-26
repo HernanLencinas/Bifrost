@@ -87,52 +87,12 @@ al abrir la aplicación.[-]`,
 
 [orange::b]Barra inferior[-]
   Muestra atajos globales: siguiente panel, ayuda y salir.
-  Cada panel tiene su propia barra de atajos contextuales.`,
-		},
-		{
-			title: "Atajos: Conexiones",
-			content: `[orange::b]Lista de conexiones (servidores)[-]
+  Cada panel tiene su propia barra de atajos contextuales.
 
-  [yellow]A[-]       Nueva conexión
-  [yellow]E[-]       Editar conexión seleccionada
-  [yellow]D[-]       Eliminar conexión (con confirmación)
-  [yellow]Enter[-]   Entrar a los túneles del servidor
-
-[orange::b]Formulario de conexión[-]
-  [yellow]Tab[-]     Moverse entre campos y botones
-  [yellow]Esc[-]     Cancelar y cerrar
-  [yellow]Enter[-]   Confirmar botón o campo activo
-
-[silver]Al eliminar una conexión se detienen todos sus
-túneles activos.[-]`,
-		},
-		{
-			title: "Atajos: Túneles",
-			content: `[orange::b]Lista de túneles (dentro de un servidor)[-]
-
-  [yellow]A[-]       Nuevo túnel
-  [yellow]E[-]       Editar túnel seleccionado
-  [yellow]D[-]       Eliminar túnel (con confirmación)
-  [yellow]T[-]       Iniciar TODOS los túneles del servidor
-  [yellow]Enter[-]   Iniciar túnel / desconectar si está activo
-  [yellow]Esc[-]     Volver a la lista de conexiones
-  [yellow]←[-]       Volver a la lista de conexiones
-
-[orange::b]Formulario de túnel[-]
-  [yellow]Tab[-]     Moverse entre campos y botones
-  [yellow]Esc[-]     Cancelar y cerrar
-
-[silver]Si edita un túnel activo, se detiene antes de guardar
-los cambios.[-]`,
-		},
-		{
-			title: "Atajos: Activos",
-			content: `[orange::b]Tabla de túneles activos[-]
-
+[orange::b]Atajos — Túneles activos[-]
   [yellow]D[-]       Detener el túnel seleccionado
   [yellow]K[-]       Detener TODAS las conexiones activas
   [yellow]↑ ↓[-]     Seleccionar fila en la tabla
-  [yellow]Tab[-]     Pasar al siguiente panel
 
 [orange::b]Estados posibles[-]
   [green]Conectado[-]              Túnel operativo
@@ -141,27 +101,19 @@ los cambios.[-]`,
   [gray]Desconectado[-]           Sin conexión activa
   [red]Error (Reintentando)[-]    Fallo con reintento automático
 
-[silver]La tabla muestra bytes enviados/recibidos, tasas
-por segundo, reconexiones y errores acumulados.[-]`,
-		},
-		{
-			title: "Atajos: Consola",
-			content: `[orange::b]Panel de consola (logs)[-]
-
-  [yellow]C[-]       Limpiar la consola de logs
-  [yellow]Tab[-]     Pasar al siguiente panel
+[orange::b]Atajos — Consola[-]
+  [yellow]C[-]       Limpiar logs
   [yellow]↑ ↓[-]     Desplazarse por el historial
   [yellow]PgUp/PgDn[-]  Scroll rápido
 
 [orange::b]Atajos globales[-]
-
   [yellow]Tab[-]         Cambiar entre paneles
-  [yellow]Ctrl+A[-]      Abrir / cerrar esta ayuda
+  [yellow]Ctrl+A[-]      Abrir / cerrar ayuda
   [yellow]Ctrl+Q[-]      Salir (con confirmación)
   [yellow]Esc[-]         Cerrar ventanas emergentes
 
-[silver]Los logs usan colores según el nivel: info, warning
-y error.[-]`,
+[silver]Los logs usan colores según el nivel: info,
+warning y error.[-]`,
 		},
 		{
 			title: "Config. cliente",
@@ -187,7 +139,16 @@ servidor Bifrost remoto con su lista de túneles.
   El archivo se guarda con permisos 0644.
 
 [silver]La ruta se resuelve junto al ejecutable (no al
-directorio de trabajo), salvo en builds temporales de go run.[-]`, clientPath, configDir),
+directorio de trabajo), salvo en builds temporales de go run.[-]
+
+[orange::b]Atajos en la TUI (lista de conexiones)[-]
+  [yellow]A[-]       Nueva conexión
+  [yellow]E[-]       Editar conexión seleccionada
+  [yellow]D[-]       Eliminar conexión (con confirmación)
+  [yellow]Enter[-]   Entrar a los túneles del servidor
+
+[silver]Al eliminar una conexión se detienen todos sus
+túneles activos.[-]`, clientPath, configDir),
 		},
 		{
 			title: "Config. servidor",
@@ -246,7 +207,12 @@ configuración proviene del archivo.[-]`, serverPath),
 
 [orange::b]URL WebSocket final[-]
   Si la URL no termina en [white]/tunnel[-], se agrega
-  automáticamente al conectar.`,
+  automáticamente al conectar.
+
+[orange::b]Atajos en la TUI (formulario)[-]
+  [yellow]Tab[-]     Moverse entre campos y botones
+  [yellow]Esc[-]     Cancelar y cerrar
+  [yellow]Enter[-]   Confirmar botón o campo activo`,
 		},
 		{
 			title: "Campos: Túnel",
@@ -271,7 +237,23 @@ configuración proviene del archivo.[-]`, serverPath),
   Local  [white]127.0.0.1:27017[-]
   Remoto [white]mongodb:27017[-]
   → Su app local se conecta a localhost:27017 y el tráfico
-    sale hacia MongoDB en la red del servidor.`,
+    sale hacia MongoDB en la red del servidor.
+
+[orange::b]Atajos en la TUI (lista de túneles)[-]
+  [yellow]A[-]       Nuevo túnel
+  [yellow]E[-]       Editar túnel seleccionado
+  [yellow]D[-]       Eliminar túnel (con confirmación)
+  [yellow]T[-]       Iniciar TODOS los túneles del servidor
+  [yellow]Enter[-]   Iniciar túnel / desconectar si está activo
+  [yellow]Esc[-]     Volver a la lista de conexiones
+  [yellow]←[-]       Volver a la lista de conexiones
+
+[orange::b]Atajos en la TUI (formulario)[-]
+  [yellow]Tab[-]     Moverse entre campos y botones
+  [yellow]Esc[-]     Cancelar y cerrar
+
+[silver]Si edita un túnel activo, se detiene antes de guardar
+los cambios.[-]`,
 		},
 		{
 			title: "Cifrado de tokens",
@@ -401,13 +383,16 @@ Genera en [white]bin/[-]:
 	}
 }
 
-func newHelpPage(version string) (tview.Primitive, *tview.List, *tview.TextView) {
+func newHelpPage(app *tview.Application, version string) (tview.Primitive, *tview.List, *tview.TextView) {
 	topics := bifrostHelpTopics(version)
 
 	contentView := tview.NewTextView().
 		SetDynamicColors(true).
 		SetScrollable(true).
-		SetWrap(true)
+		SetWrap(true).
+		SetChangedFunc(func() {
+			app.Draw()
+		})
 	contentView.SetBackgroundColor(uiFormBg)
 	contentView.SetBorderPadding(1, 1, 2, 1)
 	contentView.SetText(topics[0].content)
@@ -444,7 +429,7 @@ func newHelpPage(version string) (tview.Primitive, *tview.List, *tview.TextView)
 	shortcutsBar := tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignCenter).
-		SetText("[white][Esc][-] Cerrar   [white][Ctrl+A][-] Cerrar   [white][↑↓][-] Temas   [white][Tab][-] Panel")
+		SetText("[white][Esc][-] Cerrar   [white][Ctrl+A][-] Cerrar   [white][↑↓][-] Temas   [white][Tab][-] Panel   [white][PgUp/PgDn][-] Desplazar doc")
 	shortcutsBar.SetBackgroundColor(tcell.GetColor("#252525"))
 
 	body := tview.NewFlex().
