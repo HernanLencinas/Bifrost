@@ -418,8 +418,12 @@ para volver a la lista.[-]`, serverName))
 	activeTable.SetBorderPadding(0, 0, 1, 1)
 
 	activeTableHeaderBg := tcell.GetColor("#2f3d52")
-	newActiveHeaderCell := func(text string) *tview.TableCell {
-		return tview.NewTableCell(" "+text+" ").
+	newActiveHeaderCell := func(text string, indent bool) *tview.TableCell {
+		label := text + " "
+		if indent {
+			label = " " + label
+		}
+		return tview.NewTableCell(label).
 			SetTextColor(tcell.ColorWhite).
 			SetAttributes(tcell.AttrBold).
 			SetBackgroundColor(activeTableHeaderBg).
@@ -478,10 +482,10 @@ para volver a la lista.[-]`, serverName))
 
 	updateActiveTable = func() {
 		activeTable.Clear()
-		activeTable.SetCell(0, 0, newActiveHeaderCell("Conexión"))
-		activeTable.SetCell(0, 1, newActiveHeaderCell("Túnel"))
-		activeTable.SetCell(0, 2, newActiveHeaderCell("Local/Destino"))
-		activeTable.SetCell(0, 3, newActiveHeaderCell("Estado"))
+		activeTable.SetCell(0, 0, newActiveHeaderCell("Conexión", true))
+		activeTable.SetCell(0, 1, newActiveHeaderCell("Túnel", false))
+		activeTable.SetCell(0, 2, newActiveHeaderCell("Local/Destino", false))
+		activeTable.SetCell(0, 3, newActiveHeaderCell("Estado", false))
 
 		rowToTID = make(map[int]string)
 
@@ -492,7 +496,7 @@ para volver a la lista.[-]`, serverName))
 				if _, ok := activeTunnels[tID]; ok {
 					mainRow := row
 					rowToTID[mainRow] = tID
-					activeTable.SetCell(mainRow, 0, tview.NewTableCell(srv.Name).SetTextColor(tcell.ColorWhite))
+					activeTable.SetCell(mainRow, 0, tview.NewTableCell(" "+srv.Name).SetTextColor(tcell.ColorWhite))
 					activeTable.SetCell(mainRow, 1, tview.NewTableCell(conn.Name).SetTextColor(tcell.ColorWhite))
 					activeTable.SetCell(mainRow, 2, tview.NewTableCell(conn.Listen+" ↔ "+conn.Target).SetTextColor(tcell.ColorGreen))
 
@@ -549,13 +553,13 @@ para volver a la lista.[-]`, serverName))
 
 					detailRow := mainRow + 1
 					localDestinoDetail := fmt.Sprintf(
-						"↳ Enviado: %s (%s/s) • Recibido: %s (%s/s)",
+						" ↳ Enviado: %s (%s/s) • Recibido: %s (%s/s)",
 						formatBytes(tx),
 						formatBytes(txRate),
 						formatBytes(rx),
 						formatBytes(rxRate),
 					)
-					estadoDetail := fmt.Sprintf("↳ Reconexiones: %d • Errores: %d", reconns, errs)
+					estadoDetail := fmt.Sprintf(" ↳ Reconexiones: %d • Errores: %d", reconns, errs)
 
 					activeTable.SetCell(detailRow, 0, tview.NewTableCell("").SetSelectable(false))
 					activeTable.SetCell(detailRow, 1, tview.NewTableCell("").SetSelectable(false))
