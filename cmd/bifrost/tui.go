@@ -589,7 +589,7 @@ para volver a la lista.[-]`, serverName))
 			logPanel.SetBorderColor(tcell.ColorYellow)
 			text = fmt.Sprintf("[white]%s[-] Siguiente panel", tview.Escape("[Tab]"))
 		}
-		footerBar.SetText(text + "  [white]" + tview.Escape("[Ctrl+Q]") + "[-] Salir")
+		footerBar.SetText(text + "  [white]" + tview.Escape("[Ctrl+A]") + "[-] Ayuda  [white]" + tview.Escape("[Ctrl+Q]") + "[-] Salir")
 	}
 
 	list.SetFocusFunc(func() { updateFooter() })
@@ -702,6 +702,27 @@ para volver a la lista.[-]`, serverName))
 	updateActiveTable() // Call initial empty state
 
 	pages := tview.NewPages()
+
+	var focusBeforeHelp tview.Primitive
+	var helpTopicList *tview.List
+	var helpContentView *tview.TextView
+
+	toggleHelp := func() {
+		if pages.HasPage("help") {
+			pages.RemovePage("help")
+			if focusBeforeHelp != nil {
+				app.SetFocus(focusBeforeHelp)
+			}
+			updateFooter()
+			return
+		}
+		focusBeforeHelp = app.GetFocus()
+		helpPage, topicList, contentView := newHelpPage(version)
+		helpTopicList = topicList
+		helpContentView = contentView
+		pages.AddPage("help", helpPage, true, true)
+		app.SetFocus(helpTopicList)
+	}
 
 	populateServers = func() {
 		currentScope = "server"
@@ -984,6 +1005,31 @@ para volver a la lista.[-]`, serverName))
 			}
 			updateFooter()
 			return nil
+		}
+
+		if event.Key() == tcell.KeyCtrlA {
+			if pages.HasPage("form") || pages.HasPage("modal") {
+				return event
+			}
+			toggleHelp()
+			return nil
+		}
+
+		if pages.HasPage("help") {
+			if event.Key() == tcell.KeyEsc {
+				toggleHelp()
+				return nil
+			}
+			if event.Key() == tcell.KeyTab {
+				cur := app.GetFocus()
+				if cur == helpTopicList {
+					app.SetFocus(helpContentView)
+				} else {
+					app.SetFocus(helpTopicList)
+				}
+				return nil
+			}
+			return event
 		}
 
 		if pages.HasPage("form") || pages.HasPage("modal") {
