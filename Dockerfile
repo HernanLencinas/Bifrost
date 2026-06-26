@@ -16,9 +16,9 @@ RUN go mod download
 # Copiar el resto del código fuente
 COPY . .
 
-# Compilar el binario
-# Se usa CGO_ENABLED=0 para asegurar la portabilidad del binario
-RUN CGO_ENABLED=0 GOOS=linux go build -o bifrost cmd/bifrost/*.go
+# Compilar el binario (versión embebida desde VERSION.md)
+RUN VERSION=$(tr -d '[:space:]' < VERSION.md) && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.Version=${VERSION}" -o bifrost ./cmd/bifrost
 
 # Run stage
 FROM alpine:latest
@@ -30,8 +30,6 @@ WORKDIR /root/
 
 # Copiar el binario desde la etapa de build
 COPY --from=builder /app/bifrost .
-# Copiar el archivo de versión
-COPY --from=builder /app/VERSION.md .
 
 # Crear directorio de configuración (el usuario deberá montar su config aquí)
 RUN mkdir -p /root/config
