@@ -231,7 +231,7 @@ func StartInteractiveUI() error {
 
 	// Menú de Selección (Izquierda)
 	list := tview.NewList().ShowSecondaryText(true)
-	list.SetBorder(true)
+	list.SetBorder(false)
 	list.SetBorderPadding(0, 0, 1, 1)
 
 	var currentScope string
@@ -240,21 +240,29 @@ func StartInteractiveUI() error {
 	var populateTunnels func(srvIdx int)
 	var updateActiveTable func()
 	var updateFooter func()
+	var updateLeftShortcuts func()
 
 	// Panel izquierdo: Usamos páginas para alternar entre la lista y un mensaje de ayuda
 	leftPane := tview.NewPages()
+	var leftPanelContainer *tview.Flex
+
+	leftShortcutsBar := tview.NewTextView().
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignCenter).
+		SetWrap(false)
+	leftShortcutsBar.SetBackgroundColor(tcell.GetColor("#252525"))
 
 	helpView := tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignCenter).
 		SetWrap(true).
 		SetTextColor(tcell.ColorWhite)
-	helpView.SetBorder(true).SetTitle(" Comenzar ")
+	helpView.SetBorder(false)
 	helpView.SetBorderPadding(1, 1, 1, 1)
 
 	setHelpContent := func(scope string, serverName string) {
 		if scope == "server" {
-			helpView.SetTitle(" Comenzar ")
+			leftPanelContainer.SetTitle(" Comenzar ")
 			helpView.SetText(`
 [orange]¡Bienvenido a Bifrost![-]
 
@@ -272,7 +280,7 @@ en tu teclado para crear una nueva.
 [silver]Usa TAB para navegar y
 Ctrl+Q para salir.[-]`)
 		} else {
-			helpView.SetTitle(" Configurar Túnel ")
+			leftPanelContainer.SetTitle(" Configurar Túnel ")
 			helpView.SetText(fmt.Sprintf(`
 [orange]Servidor: %s[-]
 
@@ -414,8 +422,21 @@ para volver a la lista.[-]`, serverName))
 		SetSelectedStyle(tcell.StyleDefault.
 			Background(tcell.ColorWhite).
 			Foreground(tcell.ColorBlack))
-	activeTable.SetBorder(true).SetTitle(" Túneles Activos ")
+	activeTable.SetBorder(false)
 	activeTable.SetBorderPadding(0, 0, 1, 1)
+
+	activeTableShortcutsBar := tview.NewTextView().
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignCenter).
+		SetWrap(false)
+	activeTableShortcutsBar.SetBackgroundColor(tcell.GetColor("#252525"))
+	activeTableShortcutsBar.SetText(fmt.Sprintf("[white]%s[-] Desconectar  [white]%s[-] Detener Todos",
+		tview.Escape("[d]"), tview.Escape("[k]")))
+
+	activeTablePanel := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(activeTable, 0, 1, false).
+		AddItem(activeTableShortcutsBar, 1, 0, false)
+	activeTablePanel.SetBorder(true).SetTitle(" Túneles Activos ")
 
 	activeTableHeaderBg := tcell.GetColor("#2f3d52")
 	newActiveHeaderCell := func(text string, indent bool) *tview.TableCell {
@@ -433,41 +454,41 @@ para volver a la lista.[-]`, serverName))
 
 	rowToTID := make(map[int]string)
 
+	updateLeftShortcuts = func() {
+		var text string
+		switch currentScope {
+		case "server":
+			text = fmt.Sprintf("[white]%s[-] Nueva conexion  [white]%s[-] Editar  [white]%s[-] Eliminar  [white]%s[-] Listar tuneles",
+				tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[Enter]"))
+		case "tunnel":
+			text = fmt.Sprintf("[white]%s[-] Nuevo tunel  [white]%s[-] Editar  [white]%s[-] Eliminar  [white]%s[-] Conectar todos  [white]%s[-] Conectar/Desconectar  [white]%s[-] Volver",
+				tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[T]"), tview.Escape("[Enter]"), tview.Escape("[Esc]"))
+		}
+		leftShortcutsBar.SetText(text)
+	}
+
 	updateFooter = func() {
+		updateLeftShortcuts()
+
 		focus := app.GetFocus()
 
 		// Reset de bordes
-		list.SetBorderColor(tcell.ColorWhite)
-		activeTable.SetBorderColor(tcell.ColorWhite)
+		leftPanelContainer.SetBorderColor(tcell.ColorWhite)
+		activeTablePanel.SetBorderColor(tcell.ColorWhite)
 		logView.SetBorderColor(tcell.ColorWhite)
 
 		var text string
-		if focus == list {
-			list.SetBorderColor(tcell.ColorYellow)
-			if currentScope == "server" {
-				text = fmt.Sprintf("[white]%s[-] Nueva conexion · [white]%s[-] Editar conexion · [white]%s[-] Eliminar conexion · [white]%s[-] Listar tuneles",
-					tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[Enter]"))
-			} else {
-				text = fmt.Sprintf("[white]%s[-] Nuevo tunel · [white]%s[-] Editar tunel · [white]%s[-] Eliminar tunel · [white]%s[-] Conectar Todos · [white]%s[-] Conectar/Desconectar · [white]%s[-] Volver",
-					tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[T]"), tview.Escape("[Enter]"), tview.Escape("[Esc]"))
-			}
+		if focus == list || focus == helpView {
+			leftPanelContainer.SetBorderColor(tcell.ColorYellow)
+			text = fmt.Sprintf("[white]%s[-] Siguiente panel", tview.Escape("[Tab]"))
 		} else if focus == activeTable {
-			activeTable.SetBorderColor(tcell.ColorYellow)
-			text = fmt.Sprintf("[white]%s[-] Desconectar · [white]%s[-] Detener Todos",
-				tview.Escape("[d]"), tview.Escape("[k]"))
+			activeTablePanel.SetBorderColor(tcell.ColorYellow)
+			text = fmt.Sprintf("[white]%s[-] Siguiente panel", tview.Escape("[Tab]"))
 		} else if focus == logView {
 			logView.SetBorderColor(tcell.ColorYellow)
 			text = fmt.Sprintf("[white]%s[-] Limpiar", tview.Escape("[c]"))
-		} else if focus == helpView {
-			helpView.SetBorderColor(tcell.ColorYellow)
-			if currentScope == "server" {
-				text = fmt.Sprintf("[white]%s[-] Nueva conexion", tview.Escape("[A]"))
-			} else {
-				text = fmt.Sprintf("[white]%s[-] Nuevo tunel · [white]%s[-] Volver",
-					tview.Escape("[A]"), tview.Escape("[Esc/Izq]"))
-			}
 		}
-		footerBar.SetText(text + " · [white]" + tview.Escape("[Ctrl+Q]") + "[-] Salir")
+		footerBar.SetText(text + "  [white]" + tview.Escape("[Ctrl+Q]") + "[-] Salir")
 	}
 
 	list.SetFocusFunc(func() { updateFooter() })
@@ -584,7 +605,7 @@ para volver a la lista.[-]`, serverName))
 	populateServers = func() {
 		currentScope = "server"
 		list.Clear()
-		list.SetTitle(" Conexiones ")
+		leftPanelContainer.SetTitle(" Conexiones ")
 		list.ShowSecondaryText(false)
 
 		if len(file.Servers) == 0 {
@@ -629,7 +650,7 @@ para volver a la lista.[-]`, serverName))
 			leftPane.SwitchToPage("list")
 		}
 		list.Clear()
-		list.SetTitle(fmt.Sprintf(" Túneles en %s ", srv.Name))
+		leftPanelContainer.SetTitle(fmt.Sprintf(" Túneles en %s ", srv.Name))
 
 		for i, conn := range srv.Connections {
 			c := conn // local loop copy
@@ -816,16 +837,21 @@ para volver a la lista.[-]`, serverName))
 	}
 
 	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(activeTable, 0, 1, false).
+		AddItem(activeTablePanel, 0, 1, false).
 		AddItem(logView, 0, 1, false)
 
 	leftPane.AddPage("list", list, true, true)
 	leftPane.AddPage("help", helpView, true, false)
 
+	leftPanelContainer = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(leftPane, 0, 1, true).
+		AddItem(leftShortcutsBar, 1, 0, false)
+	leftPanelContainer.SetBorder(true).SetTitle(" Conexiones ")
+
 	// Layout principal dividido con márgenes (Padding lateral)
 	contentFlex := tview.NewFlex().
 		AddItem(nil, 1, 0, false). // Margen izquierdo
-		AddItem(leftPane, 0, 1, true).
+		AddItem(leftPanelContainer, 0, 1, true).
 		AddItem(nil, 1, 0, false). // Espacio central
 		AddItem(rightFlex, 0, 2, false).
 		AddItem(nil, 1, 0, false) // Margen derecho
