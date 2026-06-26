@@ -322,64 +322,6 @@ Cliente mínimo por línea de comandos (sin TUI).
 [silver]Para múltiples túneles, destinos configurables y
 métricas, use la TUI interactiva.[-]`,
 		},
-		{
-			title: "TLS y seguridad",
-			content: `[orange::b]Conexiones seguras[-]
-
-  [yellow]WSS[-]     WebSocket sobre TLS ([white]wss://[-])
-  [yellow]TLS[-]     Activar con "Usar TLS" o puerto :443
-  [yellow]Insecure[-] Ignorar validación de certificados
-
-[orange::b]Compatibilidad con proxies[-]
-  Funciona detrás de Traefik, Nginx y otros proxies
-  inversos que soporten WebSocket.
-
-[orange::b]Recomendaciones[-]
-  • Use tokens largos y aleatorios.
-  • Prefiera [white]ENC:...[-] en archivos de configuración.
-  • Use TLS en producción; reserve Insecure para entornos
-    de desarrollo o certificados autofirmados.
-  • Restrinja el acceso al directorio [white]config/[-].`,
-		},
-		{
-			title: "Docker",
-			content: `[orange::b]Ejecución en contenedor[-]
-
-[orange::b]Construir imagen[-]
-  [white]docker build -t bifrost:latest .[-]
-
-[orange::b]Ejecutar como servidor[-]
-  [white]docker run -p 3000:3000 \
-    -v $(pwd)/config:/root/config \
-    bifrost:latest server[-]
-
-Monte el volumen en [white]/root/config[-] para persistir
-[white]server.conf[-] y [white]client.conf[-].
-
-[orange::b]Puerto[-]
-  El Dockerfile expone el puerto [white]3000[-] por defecto.
-  Ajústelo según su [white]server.conf[-].`,
-		},
-		{
-			title: "Compilación",
-			content: `[orange::b]Build multi-plataforma[-]
-
-  [white]chmod +x build.sh[-]
-  [white]./build.sh[-]
-
-Genera en [white]bin/[-]:
-  • Ejecutables Linux, Windows y macOS (amd64/arm64)
-  • Copia de [white]config/client.conf[-] en cada carpeta
-  • ZIPs listos para distribuir
-
-[orange::b]Desarrollo local[-]
-  [white]go run ./cmd/bifrost[-]     Abre la TUI
-  [white]go run ./cmd/bifrost server[-]
-
-[orange::b]Versión embebida[-]
-  Se define en compilación con [white]-ldflags[-].
-  Sin ello, la versión aparece como [white]dev[-].`,
-		},
 	}
 }
 
@@ -429,7 +371,9 @@ func newHelpPage(app *tview.Application, version string) (tview.Primitive, *tvie
 	shortcutsBar := tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignCenter).
-		SetText("[white][Esc][-] Cerrar   [white][Ctrl+A][-] Cerrar   [white][↑↓][-] Temas   [white][Tab][-] Panel   [white][PgUp/PgDn][-] Desplazar doc")
+		SetText(fmt.Sprintf("%s  %s",
+			fmt.Sprintf("[white]%s[-:-:-] Temas", tview.Escape("[↑↓]")),
+			fmt.Sprintf("[white]%s[-:-:-] Desplazar", tview.Escape("[PgUp/PgDn]"))))
 	shortcutsBar.SetBackgroundColor(tcell.GetColor("#252525"))
 
 	body := tview.NewFlex().
