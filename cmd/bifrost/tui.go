@@ -286,7 +286,7 @@ func StartInteractiveUI() error {
 		SetChangedFunc(func() {
 			app.Draw()
 		})
-	logView.SetBorder(true).SetTitle(" Consola ")
+	logView.SetBorder(false)
 	logView.SetBorderPadding(0, 0, 1, 1)
 
 	fmt.Fprintf(logView, `[orange]
@@ -537,6 +537,18 @@ para volver a la lista.[-]`, serverName))
 		return fmt.Sprintf("[white]%s[-:-:-] %s", tview.Escape("["+key+"]"), label)
 	}
 
+	logShortcutsBar := tview.NewTextView().
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignCenter).
+		SetWrap(false)
+	logShortcutsBar.SetBackgroundColor(tcell.GetColor("#252525"))
+	logShortcutsBar.SetText(formatShortcut("C", "Limpiar"))
+
+	logPanel := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(logView, 0, 1, false).
+		AddItem(logShortcutsBar, 1, 0, false)
+	logPanel.SetBorder(true).SetTitle(" Consola ")
+
 	updateLeftShortcuts = func() {
 		switch currentScope {
 		case "server":
@@ -564,7 +576,7 @@ para volver a la lista.[-]`, serverName))
 		// Reset de bordes
 		leftPanelContainer.SetBorderColor(tcell.ColorWhite)
 		activeTablePanel.SetBorderColor(tcell.ColorWhite)
-		logView.SetBorderColor(tcell.ColorWhite)
+		logPanel.SetBorderColor(tcell.ColorWhite)
 
 		var text string
 		if focus == list || focus == helpView {
@@ -574,8 +586,8 @@ para volver a la lista.[-]`, serverName))
 			activeTablePanel.SetBorderColor(tcell.ColorYellow)
 			text = fmt.Sprintf("[white]%s[-] Siguiente panel", tview.Escape("[Tab]"))
 		} else if focus == logView {
-			logView.SetBorderColor(tcell.ColorYellow)
-			text = fmt.Sprintf("[white]%s[-] Limpiar", tview.Escape("[c]"))
+			logPanel.SetBorderColor(tcell.ColorYellow)
+			text = fmt.Sprintf("[white]%s[-] Siguiente panel", tview.Escape("[Tab]"))
 		}
 		footerBar.SetText(text + "  [white]" + tview.Escape("[Ctrl+Q]") + "[-] Salir")
 	}
@@ -918,8 +930,8 @@ para volver a la lista.[-]`, serverName))
 	}
 
 	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(activeTablePanel, 0, 1, false).
-		AddItem(logView, 0, 1, false)
+		AddItem(activeTablePanel, 0, 3, false).
+		AddItem(logPanel, 0, 2, false)
 
 	leftPane.AddPage("list", list, true, true)
 	leftPane.AddPage("help", helpView, true, false)
@@ -1057,7 +1069,7 @@ para volver a la lista.[-]`, serverName))
 		}
 
 		// Atajos exclusivos de la ventana de Logs
-		if app.GetFocus() == logView && event.Rune() == 'c' {
+		if app.GetFocus() == logView && (event.Rune() == 'c' || event.Rune() == 'C') {
 			logView.Clear()
 			return nil
 		}
