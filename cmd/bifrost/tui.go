@@ -249,8 +249,9 @@ func StartInteractiveUI() error {
 	leftShortcutsBar := tview.NewTextView().
 		SetDynamicColors(true).
 		SetTextAlign(tview.AlignCenter).
-		SetWrap(false)
+		SetWrap(true)
 	leftShortcutsBar.SetBackgroundColor(tcell.GetColor("#252525"))
+	leftShortcutsBar.SetBorderPadding(0, 0, 1, 0)
 
 	helpView := tview.NewTextView().
 		SetDynamicColors(true).
@@ -430,8 +431,9 @@ para volver a la lista.[-]`, serverName))
 		SetTextAlign(tview.AlignCenter).
 		SetWrap(false)
 	activeTableShortcutsBar.SetBackgroundColor(tcell.GetColor("#252525"))
-	activeTableShortcutsBar.SetText(fmt.Sprintf("[white]%s[-] Desconectar  [white]%s[-] Detener Todos",
-		tview.Escape("[d]"), tview.Escape("[k]")))
+	activeTableShortcutsBar.SetText(fmt.Sprintf("%s  %s",
+		fmt.Sprintf("[white]%s[-:-:-] Desconectar", tview.Escape("[D]")),
+		fmt.Sprintf("[white]%s[-:-:-] Detener Todos", tview.Escape("[K]"))))
 
 	activeTablePanel := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(activeTable, 0, 1, false).
@@ -454,17 +456,27 @@ para volver a la lista.[-]`, serverName))
 
 	rowToTID := make(map[int]string)
 
+	formatShortcut := func(key, label string) string {
+		return fmt.Sprintf("[white]%s[-:-:-] %s", tview.Escape("["+key+"]"), label)
+	}
+
 	updateLeftShortcuts = func() {
-		var text string
 		switch currentScope {
 		case "server":
-			text = fmt.Sprintf("[white]%s[-] Nueva conexion  [white]%s[-] Editar  [white]%s[-] Eliminar  [white]%s[-] Listar tuneles",
-				tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[Enter]"))
+			leftShortcutsBar.SetText(fmt.Sprintf("%s  %s  %s  %s",
+				formatShortcut("A", "Nueva"),
+				formatShortcut("E", "Editar"),
+				formatShortcut("D", "Eliminar"),
+				formatShortcut("Enter", "Túneles")))
 		case "tunnel":
-			text = fmt.Sprintf("[white]%s[-] Nuevo tunel  [white]%s[-] Editar  [white]%s[-] Eliminar  [white]%s[-] Conectar todos  [white]%s[-] Iniciar/Detener  [white]%s[-] Volver",
-				tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[T]"), tview.Escape("[Enter]"), tview.Escape("[Esc]"))
+			leftShortcutsBar.SetText(fmt.Sprintf("%s  %s  %s  %s\n%s  %s",
+				formatShortcut("A", "Nuevo"),
+				formatShortcut("E", "Editar"),
+				formatShortcut("D", "Eliminar"),
+				formatShortcut("T", "Iniciar Todos"),
+				formatShortcut("Enter", "Iniciar/Detener"),
+				formatShortcut("Esc", "Volver")))
 		}
-		leftShortcutsBar.SetText(text)
 	}
 
 	updateFooter = func() {
@@ -845,7 +857,7 @@ para volver a la lista.[-]`, serverName))
 
 	leftPanelContainer = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(leftPane, 0, 1, true).
-		AddItem(leftShortcutsBar, 1, 0, false)
+		AddItem(leftShortcutsBar, 2, 0, false)
 	leftPanelContainer.SetBorder(true).SetTitle(" Conexiones ")
 
 	// Layout principal dividido con márgenes (Padding lateral)
@@ -906,7 +918,7 @@ para volver a la lista.[-]`, serverName))
 
 		// Atajos exclusivos de la tabla de Conexiones Activas
 		if app.GetFocus() == activeTable {
-			if event.Rune() == 'd' {
+			if event.Rune() == 'd' || event.Rune() == 'D' {
 				row, _ := activeTable.GetSelection()
 				if tID, ok := rowToTID[row]; ok {
 					modal := tview.NewModal().
@@ -936,7 +948,7 @@ para volver a la lista.[-]`, serverName))
 					pages.AddPage("modal", modal, true, true)
 					return nil
 				}
-			} else if event.Rune() == 'k' {
+			} else if event.Rune() == 'k' || event.Rune() == 'K' {
 				if len(activeTunnels) == 0 {
 					return nil
 				}
