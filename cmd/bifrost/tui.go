@@ -417,6 +417,16 @@ para volver a la lista.[-]`, serverName))
 	activeTable.SetBorder(true).SetTitle(" Túneles Activos ")
 	activeTable.SetBorderPadding(0, 0, 1, 1)
 
+	activeTableHeaderBg := tcell.GetColor("#2f3d52")
+	newActiveHeaderCell := func(text string) *tview.TableCell {
+		return tview.NewTableCell(" "+text+" ").
+			SetTextColor(tcell.ColorWhite).
+			SetAttributes(tcell.AttrBold).
+			SetBackgroundColor(activeTableHeaderBg).
+			SetExpansion(1).
+			SetSelectable(false)
+	}
+
 	rowToTID := make(map[int]string)
 
 	updateFooter = func() {
@@ -468,10 +478,10 @@ para volver a la lista.[-]`, serverName))
 
 	updateActiveTable = func() {
 		activeTable.Clear()
-		activeTable.SetCell(0, 0, tview.NewTableCell("Conexión").SetTextColor(tcell.ColorYellow).SetExpansion(1).SetSelectable(false))
-		activeTable.SetCell(0, 1, tview.NewTableCell("Túnel").SetTextColor(tcell.ColorYellow).SetExpansion(1).SetSelectable(false))
-		activeTable.SetCell(0, 2, tview.NewTableCell("Local/Destino").SetTextColor(tcell.ColorYellow).SetExpansion(1).SetSelectable(false))
-		activeTable.SetCell(0, 3, tview.NewTableCell("Estado").SetTextColor(tcell.ColorYellow).SetExpansion(1).SetSelectable(false))
+		activeTable.SetCell(0, 0, newActiveHeaderCell("Conexión"))
+		activeTable.SetCell(0, 1, newActiveHeaderCell("Túnel"))
+		activeTable.SetCell(0, 2, newActiveHeaderCell("Local/Destino"))
+		activeTable.SetCell(0, 3, newActiveHeaderCell("Estado"))
 
 		rowToTID = make(map[int]string)
 
