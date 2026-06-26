@@ -106,9 +106,71 @@ func newConfirmModal(title, message string, buttons []string, done func(int, str
 	return centeredOverlayPage(modal, 72, 11)
 }
 
+func newQuitModal(activeTunnelCount int, onQuit, onCancel func()) (tview.Primitive, *tview.Form) {
+	message := tview.NewTextView().
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignCenter).
+		SetWrap(true)
+	message.SetBackgroundColor(uiFormBg)
+	message.SetBorderPadding(1, 1, 2, 2)
+
+	var body string
+	if activeTunnelCount > 0 {
+		body = fmt.Sprintf(`[orange::b]▌[-] [white]¿Desea cerrar Bifrost?[-]
+
+[silver]Se detendrán[-] [yellow]%d[-] [silver]túnel(es) activo(s)
+al salir de la aplicación.[-]`, activeTunnelCount)
+	} else {
+		body = `[orange::b]▌[-] [white]¿Desea cerrar Bifrost?[-]
+
+[silver]No hay túneles activos en este momento.[-]`
+	}
+	message.SetText(body)
+
+	normalBtn, activatedBtn := uiButtonStyles()
+	quitBtnStyle := tcell.StyleDefault.
+		Background(tcell.GetColor("#8b2500")).
+		Foreground(tcell.ColorWhite).
+		Attributes(tcell.AttrBold)
+	quitBtnActivated := tcell.StyleDefault.
+		Background(uiModalBorder).
+		Foreground(tcell.ColorBlack).
+		Attributes(tcell.AttrBold)
+
+	form := tview.NewForm().
+		SetButtonsAlign(tview.AlignCenter).
+		AddButton("Cancelar", onCancel).
+		AddButton("Salir", onQuit)
+	form.SetCancelFunc(onCancel)
+	form.SetBackgroundColor(uiFormBg)
+	form.SetButtonTextColor(tcell.ColorWhite)
+	form.SetButtonBackgroundColor(uiFormButtonBg)
+	form.SetButtonStyle(normalBtn)
+	form.SetButtonActivatedStyle(activatedBtn)
+	form.SetBorder(false)
+	form.SetBorderPadding(0, 0, 1, 1)
+	form.GetButton(1).SetStyle(quitBtnStyle)
+	form.GetButton(1).SetActivatedStyle(quitBtnActivated)
+	form.SetFocus(1)
+
+	accentBar := tview.NewBox().SetBackgroundColor(uiModalBorder)
+	card := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(message, 0, 1, false).
+		AddItem(form, 3, 0, true).
+		AddItem(accentBar, 1, 0, false)
+	card.SetBorder(true).
+		SetTitle(" Salir de Bifrost ").
+		SetTitleAlign(tview.AlignCenter).
+		SetTitleColor(uiModalAccent).
+		SetBorderColor(uiModalBorder).
+		SetBackgroundColor(uiFormBg)
+
+	return centeredOverlayPage(card, 58, 13), form
+}
+
 func newFormPage(form *tview.Form, title string, formHeight int) *tview.Grid {
 	styleForm(form)
-	form.SetBorder(true).SetTitle(" "+title+" ").SetTitleAlign(tview.AlignCenter)
+	form.SetBorder(true).SetTitle(" " + title + " ").SetTitleAlign(tview.AlignCenter)
 
 	accentBar := tview.NewBox().SetBackgroundColor(uiModalBorder)
 	card := tview.NewFlex().SetDirection(tview.FlexRow).
@@ -706,6 +768,8 @@ para volver a la lista.[-]`, serverName))
 	var focusBeforeHelp tview.Primitive
 	var helpTopicList *tview.List
 	var helpContentView *tview.TextView
+	var quitModalForm *tview.Form
+	var closeQuitModal func()
 
 	toggleHelp := func() {
 		if pages.HasPage("help") {
@@ -994,6 +1058,16 @@ para volver a la lista.[-]`, serverName))
 
 	// Manejo de teclas globales
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if pages.HasPage("quit-modal") {
+			if event.Key() == tcell.KeyEsc || event.Key() == tcell.KeyCtrlQ {
+				if closeQuitModal != nil {
+					closeQuitModal()
+				}
+				return nil
+			}
+			return event
+		}
+
 		if event.Key() == tcell.KeyTab {
 			cur := app.GetFocus()
 			if cur == list {
@@ -1008,7 +1082,7 @@ para volver a la lista.[-]`, serverName))
 		}
 
 		if event.Key() == tcell.KeyCtrlA {
-			if pages.HasPage("form") || pages.HasPage("modal") {
+			if pages.HasPage("form") || pages.HasPage("modal") || pages.HasPage("quit-modal") {
 				return event
 			}
 			toggleHelp()
@@ -1251,18 +1325,30 @@ para volver a la lista.[-]`, serverName))
 		}
 
 		if event.Key() == tcell.KeyCtrlQ {
-			pages.AddPage("modal", newConfirmModal(
-				"Salir",
-				"¿Está seguro que desea salir de Bifrost?",
-				[]string{"Si", "No"},
-				func(buttonIndex int, buttonLabel string) {
-					if buttonLabel == "Si" {
-						app.Stop()
-					}
-					pages.RemovePage("modal")
-					app.SetFocus(list)
-					updateFooter()
-				}), true, true)
+			if pages.HasPage("quit-modal") {
+				if closeQuitModal != nil {
+					closeQuitModal()
+				}
+				return nil
+			}
+			if pages.HasPage("modal") || pages.HasPage("form") {
+				return event
+			}
+			focusBeforeModal := app.GetFocus()
+			closeQuitModal = func() {
+				pages.RemovePage("quit-modal")
+				quitModalForm = nil
+				if focusBeforeModal != nil {
+					app.SetFocus(focusBeforeModal)
+				}
+				updateFooter()
+			}
+			quitPage, quitForm := newQuitModal(len(activeTunnels), func() {
+				app.Stop()
+			}, closeQuitModal)
+			quitModalForm = quitForm
+			pages.AddPage("quit-modal", quitPage, true, true)
+			app.SetFocus(quitModalForm)
 			return nil
 		}
 		return event
