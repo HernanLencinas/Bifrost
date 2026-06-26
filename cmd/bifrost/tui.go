@@ -70,9 +70,10 @@ func (d *tunnelDetail) errString() string {
 
 // tunnelConfig modela la conexión (origen y destino) para el cliente.
 type tunnelConfig struct {
-	Name   string `json:"name"`
-	Listen string `json:"listen"`
-	Target string `json:"target"`
+	Name        string `json:"name"`
+	Listen      string `json:"listen"`
+	Target      string `json:"target"`
+	Autoconnect bool   `json:"autoconnect"`
 }
 
 // serverConfig modela un servidor remoto al que se conectará el cliente.
@@ -208,7 +209,7 @@ func StartInteractiveUI() error {
 		SetChangedFunc(func() {
 			app.Draw()
 		})
-	logView.SetBorder(true).SetTitle(" Logs ")
+	logView.SetBorder(true).SetTitle(" Consola ")
 	logView.SetBorderPadding(0, 0, 1, 1)
 
 	fmt.Fprintf(logView, `[orange]
@@ -413,7 +414,7 @@ para volver a la lista.[-]`, serverName))
 		SetSelectedStyle(tcell.StyleDefault.
 			Background(tcell.ColorWhite).
 			Foreground(tcell.ColorBlack))
-	activeTable.SetBorder(true).SetTitle(" Conexiones Activas ")
+	activeTable.SetBorder(true).SetTitle(" Túneles Activos ")
 	activeTable.SetBorderPadding(0, 0, 1, 1)
 
 	rowToTID := make(map[int]string)
@@ -627,6 +628,9 @@ para volver a la lista.[-]`, serverName))
 			}
 
 			desc := fmt.Sprintf("   ↳ %s ↔ %s %s", c.Listen, c.Target, status)
+			if c.Autoconnect {
+				desc += " [silver][Auto][-]"
+			}
 
 			list.AddItem(" » "+c.Name+" ", desc, 0, func() {
 				// Acción al apretar Enter sobre un ítem.
@@ -742,6 +746,7 @@ para volver a la lista.[-]`, serverName))
 		form.AddInputField("Nombre Túnel", c.Name, 0, nil, func(text string) { c.Name = text }).
 			AddInputField("Direccion:Puerto Local", c.Listen, 0, nil, func(text string) { c.Listen = text }).
 			AddInputField("Direccion:Puerto Remoto", c.Target, 0, nil, func(text string) { c.Target = text }).
+			AddCheckbox("Conectar al iniciar", c.Autoconnect, func(checked bool) { c.Autoconnect = checked }).
 			SetButtonsAlign(tview.AlignCenter).
 			AddButton("Cancelar", func() {
 				pages.RemovePage("form")
@@ -791,7 +796,7 @@ para volver a la lista.[-]`, serverName))
 		form.SetBorder(true).SetTitle(title).SetTitleAlign(tview.AlignCenter)
 
 		formFlex := tview.NewFlex().AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).AddItem(nil, 0, 1, false).AddItem(form, 13, 1, true).AddItem(nil, 0, 1, false), 110, 1, true).
+			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).AddItem(nil, 0, 1, false).AddItem(form, 14, 1, true).AddItem(nil, 0, 1, false), 110, 1, true).
 			AddItem(nil, 0, 1, false)
 		pages.AddPage("form", formFlex, true, true)
 	}
@@ -823,6 +828,15 @@ para volver a la lista.[-]`, serverName))
 
 	// Ejecutamos la carga inicial ahora que todo está configurado
 	populateServers()
+
+	for srvIdx, srv := range file.Servers {
+		for connIdx, conn := range srv.Connections {
+			if conn.Autoconnect {
+				startTunnel(srvIdx, connIdx)
+			}
+		}
+	}
+	updateActiveTable()
 
 	// Manejo de teclas globales
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
