@@ -461,7 +461,7 @@ para volver a la lista.[-]`, serverName))
 			text = fmt.Sprintf("[white]%s[-] Nueva conexion  [white]%s[-] Editar  [white]%s[-] Eliminar  [white]%s[-] Listar tuneles",
 				tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[Enter]"))
 		case "tunnel":
-			text = fmt.Sprintf("[white]%s[-] Nuevo tunel  [white]%s[-] Editar  [white]%s[-] Eliminar  [white]%s[-] Conectar todos  [white]%s[-] Conectar/Desconectar  [white]%s[-] Volver",
+			text = fmt.Sprintf("[white]%s[-] Nuevo tunel  [white]%s[-] Editar  [white]%s[-] Eliminar  [white]%s[-] Conectar todos  [white]%s[-] Iniciar/Detener  [white]%s[-] Volver",
 				tview.Escape("[A]"), tview.Escape("[E]"), tview.Escape("[D]"), tview.Escape("[T]"), tview.Escape("[Enter]"), tview.Escape("[Esc]"))
 		}
 		leftShortcutsBar.SetText(text)
