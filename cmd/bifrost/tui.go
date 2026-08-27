@@ -244,13 +244,24 @@ func newTviewLogger(app *tview.Application, tv *tview.TextView) *tviewLogger {
 		msg: make(chan string, 100),
 	}
 
-	// Goroutine que escucha mensajes para no bloquear slog
+	// Goroutine que escucha mensajes para no bloquear slog.
+	// Agrupa líneas pendientes en un solo redibujado para no saturar tcell.
 	go func() {
 		for text := range l.msg {
-			// Solicitamos a Tview que corra el render de los logs
-			// de manera segura con el hilo UI.
+			var b strings.Builder
+			b.WriteString(text)
+		drain:
+			for {
+				select {
+				case more := <-l.msg:
+					b.WriteString(more)
+				default:
+					break drain
+				}
+			}
+			chunk := b.String()
 			l.app.QueueUpdateDraw(func() {
-				fmt.Fprint(l.tv, text)
+				fmt.Fprint(l.tv, chunk)
 				l.tv.ScrollToEnd()
 			})
 		}
@@ -341,13 +352,13 @@ func StartInteractiveUI() error {
 		SetTextAlign(tview.AlignCenter)
 	footerBar.SetBackgroundColor(tcell.ColorDarkGreen)
 
-	// Área de Logs (Derecha abajo)
+	// Área de Logs (Derecha abajo).
+	// No usar SetChangedFunc(app.Draw): el logger ya redibuja con QueueUpdateDraw.
+	// Un Draw extra desde otra goroutine intercala frames y deja artefactos en pantalla.
 	logView := tview.NewTextView().
 		SetDynamicColors(true).
 		SetScrollable(true).
-		SetChangedFunc(func() {
-			app.Draw()
-		})
+		SetMaxLines(1000)
 	logView.SetBorder(false)
 	logView.SetBorderPadding(0, 0, 1, 1)
 
@@ -444,6 +455,7 @@ para volver a la lista.[-]`, serverName))
 	activeTunnels := make(map[string]context.CancelFunc)
 	activeStatuses := make(map[string]string)
 	var activeDetails sync.Map // map[tunnelID]*tunnelDetail
+	var tableDirty atomic.Bool
 
 	startTunnel := func(srvIdx, connIdx int) {
 		tunnelID := fmt.Sprintf("%d-%d", srvIdx, connIdx)
@@ -502,11 +514,9 @@ para volver a la lista.[-]`, serverName))
 						d.rx.Add(rxDelta)
 					}
 				}
-				app.QueueUpdateDraw(func() {
-					if _, active := activeTunnels[tunnelID]; active {
-						updateActiveTable()
-					}
-				})
+				// Solo marcamos sucio: un ticker redibuja la tabla a ~4 Hz.
+				// QueueUpdateDraw por cada paquete satura tcell y rompe la TUI.
+				tableDirty.Store(true)
 			},
 			OnReconnect: func(totalReconnects int64) {
 				if v, ok := activeDetails.Load(tunnelID); ok {
@@ -651,7 +661,7 @@ para volver a la lista.[-]`, serverName))
 			logPanel.SetBorderColor(tcell.ColorYellow)
 			text = fmt.Sprintf("[white]%s[-] Siguiente panel", tview.Escape("[Tab]"))
 		}
-		footerBar.SetText(text + "  [white]" + tview.Escape("[Ctrl+A]") + "[-] Ayuda  [white]" + tview.Escape("[Ctrl+Q]") + "[-] Salir")
+		footerBar.SetText(text + "  [white]" + tview.Escape("[Ctrl+A]") + "[-] Ayuda  [white]" + tview.Escape("[Ctrl+L]") + "[-] Redibujar  [white]" + tview.Escape("[Ctrl+Q]") + "[-] Salir")
 	}
 
 	list.SetFocusFunc(func() { updateFooter() })
@@ -1058,6 +1068,12 @@ para volver a la lista.[-]`, serverName))
 
 	// Manejo de teclas globales
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlL {
+			app.ForceDraw()
+			app.Sync()
+			return nil
+		}
+
 		if pages.HasPage("quit-modal") {
 			if event.Key() == tcell.KeyEsc || event.Key() == tcell.KeyCtrlQ {
 				if closeQuitModal != nil {
@@ -1364,6 +1380,26 @@ para volver a la lista.[-]`, serverName))
 
 	slog.Info("Bienvenido a Bifrost")
 	slog.Info("Modo multi-servidor habilitado.")
+
+	redrawStop := make(chan struct{})
+	defer close(redrawStop)
+	go func() {
+		ticker := time.NewTicker(250 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-redrawStop:
+				return
+			case <-ticker.C:
+				if !tableDirty.Swap(false) {
+					continue
+				}
+				app.QueueUpdateDraw(func() {
+					updateActiveTable()
+				})
+			}
+		}
+	}()
 
 	if err := app.SetRoot(pages, true).EnableMouse(true).Run(); err != nil {
 		return err

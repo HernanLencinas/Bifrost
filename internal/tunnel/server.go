@@ -100,7 +100,7 @@ func (s *Server) handleTunnel(w http.ResponseWriter, r *http.Request) {
 	conn := NewWSConn(wsConn)
 
 	// 4. Inicia la sesión de Yamux sobre el net.Conn del WebSocket
-	session, err := yamux.Server(conn, yamux.DefaultConfig())
+	session, err := yamux.Server(conn, newYamuxConfig())
 	if err != nil {
 		slog.Error("No se pudo iniciar Yamux", "error", err)
 		return

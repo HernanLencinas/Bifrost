@@ -57,6 +57,7 @@ func (h *customHandler) Handle(ctx context.Context, r slog.Record) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	var b strings.Builder
 	if h.isTview {
 		// En Tview, damos color al nivel y escapamos los corchetes para que no desaparezcan.
 		color := "white"
@@ -69,20 +70,19 @@ func (h *customHandler) Handle(ctx context.Context, r slog.Record) error {
 		if levelStr == " OK " {
 			color = "green"
 		}
-		// Formato: [[ [COLOR]LEVEL[-] ]
-		fmt.Fprintf(h.out, "%s [[%s]%s[-]] %s", timeStr, color, levelStr, r.Message)
+		fmt.Fprintf(&b, "%s [[%s]%s[-]] %s", timeStr, color, levelStr, r.Message)
 	} else {
-		// Consola normal
-		fmt.Fprintf(h.out, "%s [%s] %s", timeStr, levelStr, r.Message)
+		fmt.Fprintf(&b, "%s [%s] %s", timeStr, levelStr, r.Message)
 	}
 
 	r.Attrs(func(a slog.Attr) bool {
-		fmt.Fprintf(h.out, " %s=%v", a.Key, a.Value.Any())
+		fmt.Fprintf(&b, " %s=%v", a.Key, a.Value.Any())
 		return true
 	})
+	b.WriteByte('\n')
 
-	fmt.Fprint(h.out, "\n")
-	return nil
+	_, err := io.WriteString(h.out, b.String())
+	return err
 }
 
 func (h *customHandler) WithAttrs(attrs []slog.Attr) slog.Handler {

@@ -112,7 +112,7 @@ func (c *Client) Start(ctx context.Context) error {
 				}
 				
 				slog.Info("Conectado exitosamente al servidor Bifrost")
-				sess, err := yamux.Client(conn, yamux.DefaultConfig())
+				sess, err := yamux.Client(conn, newYamuxConfig())
 				if err != nil {
 					if c.opts.OnError != nil {
 						c.opts.OnError(err)

@@ -195,6 +195,7 @@ barras de atajos contextuales y un pie de página global.
 [orange::b]Atajos globales[-]
   [yellow]Tab[-]         Cambiar entre paneles
   [yellow]Ctrl+A[-]      Abrir / cerrar documentación
+  [yellow]Ctrl+L[-]      Forzar redibujado de la pantalla
   [yellow]Ctrl+Q[-]      Salir (con confirmación)
   [yellow]Esc[-]         Cerrar ventana emergente activa`,
 		},
