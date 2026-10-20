@@ -560,6 +560,10 @@ interactiva.
 
   [yellow]-t, --token[-]
     Token de autenticación compartido con el servidor.
+    Acepta texto plano o un valor [white]ENC:...[-]
+    (el mismo formato que genera [yellow]encryptsecret[-]
+    y usa la TUI/servidor). Si empieza con [white]ENC:[-],
+    se descifra antes de enviarlo en Authorization.
     Default: [white]super_secreto[-]
 
   [yellow]-l, --listen[-]
@@ -587,6 +591,14 @@ interactiva.
   [white]./bifrost client \
     -u host-con-cert-autofirmado:443 \
     -t 123 \
+    -l 127.0.0.1:9091 \
+    -r db:5432 \
+    -k[-]
+
+[orange::b]Ejemplo con token cifrado[-]
+  [white]./bifrost client \
+    -u proxy.ejemplo.com:443 \
+    -t ENC:base64... \
     -l 127.0.0.1:9091 \
     -r db:5432 \
     -k[-]
