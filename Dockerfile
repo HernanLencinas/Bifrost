@@ -26,16 +26,31 @@ FROM alpine:latest
 # Instalar certificados CA para poder hacer peticiones HTTPS (túneles wss://)
 RUN apk --no-cache add ca-certificates tzdata
 
-WORKDIR /root/
+# Usar /app en lugar de /root/ para que sea accesible por cualquier UID.
+# OpenShift ejecuta los contenedores con un UID arbitrario (no root) que
+# pertenece al grupo root (GID 0), por lo que /root/ no es accesible.
+WORKDIR /app
 
 # Copiar el binario desde la etapa de build
 COPY --from=builder /app/bifrost .
 
 # Crear directorio de configuración (el usuario deberá montar su config aquí)
-RUN mkdir -p /root/config
+RUN mkdir -p /app/config
+
+# Ajustar permisos para compatibilidad con OpenShift:
+#  - El binario debe ser ejecutable por el grupo root (GID 0).
+#  - Los directorios deben ser accesibles/escribibles por el grupo root.
+RUN chmod g+rwX /app /app/config && \
+    chmod 0755 /app/bifrost && \
+    chgrp -R 0 /app && \
+    chmod -R g=u /app
+
+# Ejecutar como usuario no-root por defecto (buena práctica; OpenShift
+# igualmente sobreescribe el UID, pero esto mantiene la imagen portable).
+USER 1001
 
 # Definir el volumen para la persistencia de configuraciones
-VOLUME ["/root/config"]
+VOLUME ["/app/config"]
 
 # Exponer el puerto por defecto del servidor (si se usa en modo server)
 EXPOSE 3000
