@@ -94,6 +94,25 @@ Ejecuta `./bifrost` sin argumentos para abrir la consola interactiva.
 }
 ```
 
+### 4. Cliente CLI (sin TUI)
+Para scripts o pruebas rápidas, el subcomando `client` abre un único túnel por línea de comandos:
+
+```bash
+./bifrost client \
+  -u wss://arc-bifrost-dev.ejemplo.com:443 \
+  -t mi_token \
+  -l 127.0.0.1:9091 \
+  -r db:5432 \
+  -k
+```
+
+**Flags:**
+- `-u, --url`: URL WebSocket del servidor (completa o `host:puerto`; se completa el esquema y `/tunnel` si faltan).
+- `-t, --token`: token compartido con el servidor.
+- `-l, --listen`: dirección TCP local del proxy (default `127.0.0.1:9090`).
+- `-r, --target`: destino remoto resuelto desde la red del servidor (ej. `db:5432`).
+- `-k, --insecure`: omitir verificación TLS (certificados autofirmados).
+
 ---
 
 ## Docker Support

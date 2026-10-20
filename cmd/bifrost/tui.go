@@ -477,18 +477,7 @@ para volver a la lista.[-]`, serverName))
 			secret = decrypted
 		}
 
-		// Auto-completar URL
-		fullURL := srv.URL
-		if !strings.HasPrefix(fullURL, "ws://") && !strings.HasPrefix(fullURL, "wss://") {
-			if srv.UseTLS || strings.HasSuffix(fullURL, ":443") {
-				fullURL = "wss://" + fullURL
-			} else {
-				fullURL = "ws://" + fullURL
-			}
-		}
-		if !strings.HasSuffix(fullURL, "/tunnel") {
-			fullURL = strings.TrimSuffix(fullURL, "/") + "/tunnel"
-		}
+		fullURL := tunnel.NormalizeServerURL(srv.URL, srv.UseTLS)
 
 		client := tunnel.NewClient(tunnel.ClientOptions{
 			ServerURL:          fullURL,
