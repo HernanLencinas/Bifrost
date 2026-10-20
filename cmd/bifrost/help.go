@@ -551,22 +551,57 @@ interactiva.
 [orange::b]Flags disponibles[-]
 
   [yellow]-u, --url[-]
-    URL WebSocket completa del servidor.
+    URL WebSocket del servidor. Acepta URL completa o
+    [white]host:puerto[-]: si falta el esquema se agrega
+    [white]ws://[-] o [white]wss://[-] (este último si termina
+    en [white]:443[-]); si no termina en [white]/tunnel[-],
+    se agrega automáticamente.
     Default: [white]ws://localhost:8000/tunnel[-]
 
   [yellow]-t, --token[-]
     Token de autenticación compartido con el servidor.
+    Acepta texto plano o un valor [white]ENC:...[-]
+    (el mismo formato que genera [yellow]encryptsecret[-]
+    y usa la TUI/servidor). Si empieza con [white]ENC:[-],
+    se descifra antes de enviarlo en Authorization.
     Default: [white]super_secreto[-]
 
   [yellow]-l, --listen[-]
     Dirección local donde escucha el proxy TCP.
     Default: [white]127.0.0.1:9090[-]
 
+  [yellow]-r, --target[-]
+    Destino remoto resuelto desde la red del servidor
+    (header [white]X-Tunnel-Target[-]).
+    Ejemplo: [white]db:5432[-], [white]10.0.0.5:22[-]
+
+  [yellow]-k, --insecure[-]
+    Omite la verificación del certificado TLS.
+    Útil con certificados autofirmados.
+    [red]No recomendado en producción[-] salvo necesidad.
+
 [orange::b]Ejemplo básico[-]
   [white]./bifrost client \
     -u wss://proxy.ejemplo.com:443/tunnel \
     -t mi_token_secreto \
-    -l 127.0.0.1:8080[-]
+    -l 127.0.0.1:8080 \
+    -r db-interna:5432[-]
+
+[orange::b]Ejemplo con certificado autofirmado[-]
+  [white]./bifrost client \
+    -u host-con-cert-autofirmado:443 \
+    -t 123 \
+    -l 127.0.0.1:9091 \
+    -r db:5432 \
+    -k[-]
+
+[orange::b]Ejemplo con token cifrado[-]
+  [white]./bifrost client \
+    -u proxy.ejemplo.com:443 \
+    -t ENC:base64... \
+    -l 127.0.0.1:9091 \
+    -r db:5432 \
+    -k[-]
 
 [orange::b]Estados reportados[-]
   [yellow]Iniciando Local[-]  — abriendo puerto local
@@ -585,7 +620,6 @@ interactiva.
   • Sin configuración persistente en JSON
   • Sin métricas visuales de tráfico
   • Sin gestión de múltiples servidores
-  • El destino remoto no es configurable vía flags
 
 [silver]Para uso habitual, se recomienda la TUI
 ([yellow]./bifrost[-]) que ofrece gestión completa
